@@ -1,0 +1,1381 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Will Biloski — A Mixtape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Abril+Fatface&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0e0c0a;
+  --bg2:#161410;
+  --bg3:#1e1b16;
+  --tape:#c8a84b;
+  --tape2:#e8c86a;
+  --red:#d94f3a;
+  --teal:#3ab8a8;
+  --white:#f0ece4;
+  --muted:#6a6458;
+  --label:#f5f0e8;
+  --bebas:'Bebas Neue',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+  --serif:'DM Serif Display',serif;
+  --abril:'Abril Fatface',serif;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:var(--mono);
+  overflow-x:hidden;
+}
+
+/* ── NOW PLAYING BAR ── */
+.now-playing{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  z-index:200;
+  background:var(--bg2);
+  border-top:1px solid rgba(200,168,75,0.3);
+  padding:0.6rem 2rem;
+  display:flex;
+  align-items:center;
+  gap:1.5rem;
+}
+
+.np-cassette{
+  width:36px;height:24px;
+  border:2px solid var(--tape);
+  border-radius:3px;
+  position:relative;
+  flex-shrink:0;
+}
+.np-cassette::before,.np-cassette::after{
+  content:'';
+  position:absolute;
+  width:8px;height:8px;
+  border:2px solid var(--tape);
+  border-radius:50%;
+  top:50%;transform:translateY(-50%);
+}
+.np-cassette::before{left:4px}
+.np-cassette::after{right:4px}
+
+.np-info{flex:1;min-width:0}
+.np-track{
+  font-family:var(--bebas);
+  font-size:0.9rem;
+  letter-spacing:0.08em;
+  color:var(--tape2);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.np-artist{
+  font-size:0.65rem;
+  color:var(--muted);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+}
+
+.np-progress{
+  flex:2;
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+}
+.np-time{font-size:0.65rem;color:var(--muted);font-family:var(--mono);flex-shrink:0}
+.np-bar{
+  flex:1;height:3px;
+  background:rgba(255,255,255,0.1);
+  position:relative;
+  cursor:pointer;
+}
+.np-bar-fill{
+  height:100%;
+  background:var(--tape);
+  width:0%;
+  transition:width 0.5s linear;
+}
+.np-bar::after{
+  content:'';
+  position:absolute;
+  top:50%;left:var(--pos,0%);
+  transform:translate(-50%,-50%);
+  width:10px;height:10px;
+  background:var(--tape2);
+  border-radius:50%;
+  transition:left 0.5s linear;
+}
+
+.np-controls{
+  display:flex;gap:1rem;align-items:center;flex-shrink:0;
+}
+.np-btn{
+  background:none;border:none;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:0.7rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  font-family:var(--mono);
+  padding:0.25rem 0.5rem;
+  transition:color 0.15s;
+}
+.np-btn:hover{color:var(--tape2)}
+.np-btn.active{color:var(--tape2)}
+
+/* ── HEADER ── */
+.site-header{
+  padding:0;
+  border-bottom:1px solid rgba(200,168,75,0.2);
+}
+
+.header-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.6rem 2rem;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.header-logo{
+  font-family:var(--bebas);
+  font-size:1rem;
+  letter-spacing:0.15em;
+  color:var(--tape);
+}
+.header-nav{
+  display:flex;gap:0;
+}
+.header-nav a{
+  font-size:0.65rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-decoration:none;
+  padding:0.3rem 1rem;
+  border-left:1px solid rgba(255,255,255,0.06);
+  transition:color 0.15s;
+}
+.header-nav a:hover{color:var(--tape2)}
+
+/* ── HERO / ALBUM ART ── */
+.hero{
+  display:grid;
+  grid-template-columns:380px 1fr;
+  min-height:80vh;
+  border-bottom:1px solid rgba(200,168,75,0.2);
+}
+
+/* CASSETTE ART */
+.hero-cassette{
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  padding:3rem;
+  border-right:1px solid rgba(200,168,75,0.15);
+  position:relative;
+  overflow:hidden;
+}
+
+.hero-cassette::before{
+  content:'';
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(200,168,75,0.02) 3px,
+    rgba(200,168,75,0.02) 4px
+  );
+}
+
+.cassette-body{
+  width:240px;
+  background:#1a1710;
+  border:2px solid #3a3628;
+  border-radius:8px;
+  padding:16px;
+  position:relative;
+  z-index:1;
+  box-shadow:0 0 0 1px rgba(200,168,75,0.1),4px 4px 0 rgba(0,0,0,0.5);
+}
+
+.cassette-label{
+  background:var(--label);
+  border-radius:4px;
+  padding:12px 14px;
+  margin-bottom:12px;
+  position:relative;
+  overflow:hidden;
+}
+
+.cassette-label::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:repeating-linear-gradient(90deg,var(--red) 0,var(--red) 8px,var(--tape) 8px,var(--tape) 16px,var(--teal) 16px,var(--teal) 24px);
+}
+
+.cassette-label-title{
+  font-family:var(--abril);
+  font-size:1.1rem;
+  color:#1a1710;
+  line-height:1.1;
+  margin-top:6px;
+  margin-bottom:2px;
+}
+
+.cassette-label-artist{
+  font-family:var(--mono);
+  font-size:0.6rem;
+  color:#666;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+
+.cassette-label-side{
+  font-family:var(--bebas);
+  font-size:0.7rem;
+  letter-spacing:0.2em;
+  color:var(--red);
+  border-top:1px solid rgba(0,0,0,0.1);
+  padding-top:4px;
+  margin-top:4px;
+}
+
+.cassette-windows{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;
+}
+
+.cassette-window{
+  flex:1;height:28px;
+  background:#0a0908;
+  border:1px solid #2a2820;
+  border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.cassette-reel{
+  width:20px;height:20px;
+  border:2px solid #3a3628;
+  border-radius:50%;
+  position:relative;
+  animation:spin 3s linear infinite;
+}
+
+.cassette-reel::before{
+  content:'';
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:6px;height:6px;
+  background:#3a3628;
+  border-radius:50%;
+}
+
+.cassette-reel::after{
+  content:'';
+  position:absolute;
+  top:1px;left:50%;
+  transform:translateX(-50%);
+  width:2px;height:6px;
+  background:#3a3628;
+  border-radius:1px;
+}
+
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+.cassette-hub{
+  width:8px;height:8px;
+  background:#2a2820;
+  border-radius:50%;
+  border:1px solid #3a3628;
+}
+
+.cassette-bottom{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid #2a2820;
+}
+.cassette-bottom span{
+  font-family:var(--mono);
+  font-size:0.55rem;
+  color:#3a3628;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+}
+.cassette-notch{
+  width:16px;height:6px;
+  background:#0a0908;
+  border:1px solid #2a2820;
+  border-radius:1px;
+}
+
+/* HERO RIGHT */
+.hero-right{
+  padding:4rem 3rem;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+.hero-eyebrow{
+  font-size:0.65rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--tape);
+  margin-bottom:1rem;
+  font-family:var(--mono);
+}
+
+.hero-title{
+  font-family:var(--bebas);
+  font-size:clamp(3rem,6vw,5rem);
+  letter-spacing:0.04em;
+  line-height:0.95;
+  margin-bottom:0.5rem;
+  color:var(--white);
+}
+
+.hero-title .accent{color:var(--tape2)}
+
+.hero-subtitle{
+  font-family:var(--serif);
+  font-size:1.1rem;
+  font-style:italic;
+  color:var(--muted);
+  margin-bottom:2.5rem;
+  line-height:1.5;
+}
+
+.tracklist-preview{
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding-top:1.5rem;
+  margin-bottom:2.5rem;
+}
+
+.tracklist-label{
+  font-size:0.6rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:1rem;
+}
+
+.track-row{
+  display:flex;
+  align-items:center;
+  gap:1rem;
+  padding:0.5rem 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.track-row:hover{padding-left:0.5rem}
+.track-row:last-child{border-bottom:none}
+
+.track-num{
+  font-family:var(--mono);
+  font-size:0.65rem;
+  color:var(--muted);
+  width:20px;
+  flex-shrink:0;
+}
+
+.track-name{
+  font-family:var(--bebas);
+  font-size:0.95rem;
+  letter-spacing:0.08em;
+  color:var(--white);
+  flex:1;
+}
+
+.track-dur{
+  font-family:var(--mono);
+  font-size:0.65rem;
+  color:var(--muted);
+}
+
+.track-row.playing .track-name{color:var(--tape2)}
+.track-row.playing .track-num{color:var(--tape2)}
+
+.hero-meta{
+  display:flex;
+  gap:2rem;
+}
+
+.meta-item{}
+.meta-label{
+  font-size:0.6rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:0.2rem;
+}
+.meta-val{
+  font-family:var(--bebas);
+  font-size:1.1rem;
+  letter-spacing:0.06em;
+  color:var(--white);
+}
+
+/* ── SECTIONS ── */
+.section-bar{
+  display:flex;align-items:center;gap:1.5rem;
+  padding:1rem 2rem;
+  border-bottom:1px solid rgba(200,168,75,0.15);
+  border-top:1px solid rgba(200,168,75,0.15);
+  margin-top:3rem;
+  background:var(--bg2);
+}
+
+.section-track-num{
+  font-family:var(--bebas);
+  font-size:2rem;
+  color:var(--tape);
+  letter-spacing:0.04em;
+  line-height:1;
+  opacity:0.4;
+}
+
+.section-track-title{
+  font-family:var(--bebas);
+  font-size:1.6rem;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--white);
+}
+
+.section-rule{flex:1;height:1px;background:rgba(200,168,75,0.15)}
+
+.section-side{
+  font-family:var(--mono);
+  font-size:0.6rem;
+  letter-spacing:0.12em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+
+/* ── SKILLS / TRACKLIST ── */
+.tracklist-full{
+  padding:2rem;
+  border-bottom:1px solid rgba(200,168,75,0.1);
+}
+
+.tl-side{
+  margin-bottom:2rem;
+}
+
+.tl-side-label{
+  font-family:var(--bebas);
+  font-size:0.85rem;
+  letter-spacing:0.2em;
+  color:var(--tape);
+  margin-bottom:1rem;
+  padding-bottom:0.4rem;
+  border-bottom:1px solid rgba(200,168,75,0.2);
+}
+
+.tl-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:0;
+}
+
+.tl-track{
+  display:flex;align-items:center;gap:0.75rem;
+  padding:0.55rem 0.75rem;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  transition:background 0.1s;
+  cursor:default;
+}
+.tl-track:hover{background:rgba(200,168,75,0.05)}
+
+.tl-num{
+  font-family:var(--mono);
+  font-size:0.6rem;
+  color:var(--muted);
+  width:18px;flex-shrink:0;
+}
+
+.tl-name{
+  font-family:var(--mono);
+  font-size:0.8rem;
+  color:var(--white);
+  flex:1;
+}
+
+.tl-bar-wrap{width:50px;height:2px;background:rgba(255,255,255,0.08);flex-shrink:0}
+.tl-bar{height:100%;background:var(--tape)}
+
+/* ── EXPERIENCE / LINER NOTES ── */
+.liner-notes{
+  padding:0 2rem;
+  border-bottom:1px solid rgba(200,168,75,0.1);
+}
+
+.liner-entry{
+  display:grid;
+  grid-template-columns:180px 1px 1fr;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  min-height:100px;
+}
+.liner-entry:last-child{border-bottom:none}
+
+.liner-side{
+  padding:1.5rem 1.5rem 1.5rem 0;
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+
+.liner-track-num{
+  font-family:var(--bebas);
+  font-size:2.5rem;
+  color:var(--tape);
+  opacity:0.2;
+  line-height:1;
+}
+
+.liner-role{
+  font-family:var(--bebas);
+  font-size:1rem;
+  letter-spacing:0.06em;
+  color:var(--white);
+  margin-bottom:0.15rem;
+}
+
+.liner-org{
+  font-family:var(--serif);
+  font-size:0.8rem;
+  font-style:italic;
+  color:var(--tape);
+  margin-bottom:0.15rem;
+}
+
+.liner-date{
+  font-family:var(--mono);
+  font-size:0.62rem;
+  color:var(--muted);
+  letter-spacing:0.06em;
+}
+
+.liner-badge{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:0.55rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  padding:2px 6px;
+  border-radius:2px;
+  margin-top:0.4rem;
+  align-self:flex-start;
+}
+.liner-badge.stem{background:rgba(200,168,75,0.15);color:var(--tape)}
+.liner-badge.pro{background:rgba(217,79,58,0.15);color:var(--red)}
+.liner-badge.vol{background:rgba(58,184,168,0.15);color:var(--teal)}
+
+.liner-divider{background:rgba(255,255,255,0.06)}
+
+.liner-content{
+  padding:1.5rem 0 1.5rem 2rem;
+}
+
+.liner-bullets{
+  list-style:none;
+  display:flex;flex-direction:column;gap:0.6rem;
+}
+.liner-bullets li{
+  font-family:var(--mono);
+  font-size:0.78rem;
+  line-height:1.65;
+  color:rgba(240,236,228,0.65);
+  padding-left:1.2rem;
+  position:relative;
+}
+.liner-bullets li::before{
+  content:'▸';
+  position:absolute;left:0;
+  color:var(--tape);
+  font-size:0.6rem;
+  top:0.15em;
+}
+
+/* ── PROJECT / B-SIDE ── */
+.bside{
+  display:grid;
+  grid-template-columns:1fr 1px 300px;
+  border-bottom:1px solid rgba(200,168,75,0.1);
+}
+
+.bside-main{
+  padding:3rem 2rem;
+  background:var(--bg3);
+  position:relative;
+  overflow:hidden;
+}
+
+.bside-main::after{
+  content:'B';
+  position:absolute;
+  bottom:-0.2em;right:-0.05em;
+  font-family:var(--abril);
+  font-size:18rem;
+  color:rgba(200,168,75,0.03);
+  line-height:1;
+  pointer-events:none;
+}
+
+.bside-eyebrow{
+  font-size:0.6rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--tape);
+  margin-bottom:1rem;
+  font-family:var(--mono);
+}
+
+.bside-title{
+  font-family:var(--bebas);
+  font-size:clamp(2.5rem,5vw,4rem);
+  letter-spacing:0.04em;
+  line-height:0.95;
+  color:var(--white);
+  margin-bottom:1.5rem;
+}
+.bside-title span{color:var(--tape2)}
+
+.bside-desc{
+  font-family:var(--mono);
+  font-size:0.8rem;
+  line-height:1.8;
+  color:rgba(240,236,228,0.6);
+  margin-bottom:2rem;
+  max-width:480px;
+}
+
+.bside-tags{display:flex;flex-wrap:wrap;gap:0.4rem}
+.btag{
+  font-family:var(--mono);
+  font-size:0.62rem;
+  padding:0.25rem 0.6rem;
+  border:1px solid rgba(200,168,75,0.2);
+  color:var(--muted);
+  letter-spacing:0.06em;
+  transition:all 0.15s;
+}
+.btag:hover{border-color:var(--tape);color:var(--tape)}
+
+.bside-aside{
+  padding:3rem 2rem;
+  border-left:none;
+  display:flex;flex-direction:column;gap:1.2rem;
+}
+
+.aside-label{
+  font-family:var(--bebas);
+  font-size:0.85rem;
+  letter-spacing:0.2em;
+  color:var(--tape);
+  padding-bottom:0.5rem;
+  border-bottom:1px solid rgba(200,168,75,0.15);
+  margin-bottom:0.5rem;
+}
+
+.riff{
+  padding:0.7rem 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  display:flex;gap:0.8rem;
+}
+.riff-n{
+  font-family:var(--bebas);
+  font-size:1.3rem;
+  color:var(--tape);
+  opacity:0.5;
+  flex-shrink:0;
+  line-height:1;
+}
+.riff-t{
+  font-family:var(--mono);
+  font-size:0.72rem;
+  color:var(--muted);
+  line-height:1.5;
+  font-style:italic;
+}
+
+/* ── EDUCATION ── */
+.edu-section{
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+  border-bottom:1px solid rgba(200,168,75,0.1);
+}
+
+.edu-left{
+  padding:3rem 2rem;
+  background:var(--bg3);
+  position:relative;
+  overflow:hidden;
+}
+
+.edu-big-num{
+  font-family:var(--abril);
+  font-size:12rem;
+  color:rgba(200,168,75,0.04);
+  position:absolute;
+  bottom:-2rem;left:-1rem;
+  line-height:1;
+  pointer-events:none;
+}
+
+.edu-content{position:relative;z-index:1}
+
+.edu-gpa{
+  font-family:var(--bebas);
+  font-size:6rem;
+  color:var(--tape2);
+  line-height:0.9;
+  letter-spacing:0.02em;
+}
+
+.edu-gpa-sub{
+  font-family:var(--mono);
+  font-size:0.65rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:2rem;
+}
+
+.edu-degree{
+  font-family:var(--bebas);
+  font-size:1.3rem;
+  letter-spacing:0.06em;
+  color:var(--white);
+  line-height:1.2;
+  margin-bottom:0.3rem;
+}
+.edu-school{
+  font-family:var(--serif);
+  font-style:italic;
+  color:var(--tape);
+  font-size:1rem;
+  margin-bottom:0.2rem;
+}
+.edu-grad{
+  font-family:var(--mono);
+  font-size:0.65rem;
+  color:var(--muted);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+}
+
+.edu-right{padding:3rem 2rem}
+
+.course-head{
+  font-family:var(--bebas);
+  font-size:0.85rem;
+  letter-spacing:0.2em;
+  color:var(--tape);
+  padding-bottom:0.5rem;
+  border-bottom:1px solid rgba(200,168,75,0.2);
+  margin-bottom:1.2rem;
+}
+
+.course-row{
+  display:flex;align-items:center;gap:0.75rem;
+  padding:0.5rem 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  font-family:var(--mono);
+  font-size:0.78rem;
+  color:rgba(240,236,228,0.6);
+}
+.course-row::before{
+  content:'';
+  width:4px;height:4px;
+  background:var(--tape);
+  border-radius:50%;
+  flex-shrink:0;
+}
+
+/* ── CONTACT ── */
+.contact-section{
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+}
+
+.contact-left{
+  padding:3rem 2rem;
+  background:var(--bg3);
+}
+
+.contact-big{
+  font-family:var(--bebas);
+  font-size:clamp(2.5rem,5vw,4rem);
+  letter-spacing:0.04em;
+  line-height:0.95;
+  color:var(--white);
+  margin-bottom:0.5rem;
+}
+.contact-big span{color:var(--tape2)}
+
+.contact-sub{
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:0.9rem;
+  color:var(--muted);
+  margin-bottom:2.5rem;
+  line-height:1.6;
+}
+
+.contact-row{
+  display:flex;align-items:flex-start;gap:1rem;
+  padding:0.9rem 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  text-decoration:none;
+  color:var(--white);
+  transition:padding-left 0.15s;
+}
+.contact-row:hover{padding-left:0.5rem}
+.contact-row:last-child{border-bottom:none}
+
+.contact-row-label{
+  font-family:var(--mono);
+  font-size:0.58rem;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:0.15rem;
+}
+.contact-row-val{
+  font-family:var(--bebas);
+  font-size:1rem;
+  letter-spacing:0.06em;
+  color:var(--white);
+}
+
+.contact-right{
+  padding:3rem 2rem;
+  display:flex;flex-direction:column;justify-content:center;gap:2rem;
+}
+
+.sleeve-note{
+  border-left:2px solid var(--tape);
+  padding-left:1.2rem;
+}
+.sleeve-note p{
+  font-family:var(--serif);
+  font-size:1.1rem;
+  font-style:italic;
+  color:var(--white);
+  line-height:1.5;
+  margin-bottom:0.5rem;
+}
+.sleeve-note small{
+  font-family:var(--mono);
+  font-size:0.65rem;
+  color:var(--muted);
+  letter-spacing:0.08em;
+}
+
+/* ── FOOTER ── */
+footer{
+  padding:1.2rem 2rem;
+  border-top:1px solid rgba(200,168,75,0.15);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);
+  margin-bottom:56px;
+}
+.footer-title{
+  font-family:var(--bebas);
+  font-size:1rem;
+  letter-spacing:0.12em;
+  color:var(--tape);
+}
+.footer-sub{
+  font-family:var(--mono);
+  font-size:0.62rem;
+  color:var(--muted);
+  font-style:italic;
+  letter-spacing:0.06em;
+}
+
+/* ANIMATIONS */
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hero-title{animation:fadeup 0.5s ease both}
+.hero-subtitle{animation:fadeup 0.5s 0.1s ease both}
+.tracklist-preview{animation:fadeup 0.5s 0.2s ease both}
+
+@media(max-width:750px){
+  .hero,.tl-grid,.edu-section,.contact-section,.bside{grid-template-columns:1fr}
+  .hero-cassette{min-height:280px;border-right:none;border-bottom:1px solid rgba(200,168,75,0.15)}
+  .liner-entry{grid-template-columns:1fr}
+  .liner-divider{display:none}
+  .liner-side{border-bottom:1px solid rgba(255,255,255,0.06)}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-top">
+    <div class="header-logo">WB // Mixtape Vol.1</div>
+    <nav class="header-nav">
+      <a href="#skills">Tracklist</a>
+      <a href="#experience">Liner Notes</a>
+      <a href="#projects">B-Side</a>
+      <a href="#education">Credits</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-cassette">
+    <div class="cassette-body">
+      <div class="cassette-label">
+        <div class="cassette-label-title">A Mixtape<br>For Recruiters</div>
+        <div class="cassette-label-artist">Will Biloski · Cornell '28</div>
+        <div class="cassette-label-side">Side A — The Best Cuts</div>
+      </div>
+      <div class="cassette-windows">
+        <div class="cassette-window">
+          <div class="cassette-reel"></div>
+        </div>
+        <div class="cassette-hub"></div>
+        <div class="cassette-window">
+          <div class="cassette-reel" style="animation-direction:reverse"></div>
+        </div>
+      </div>
+      <div class="cassette-bottom">
+        <div class="cassette-notch"></div>
+        <span>C-90 · Hi-Bias · IEC II</span>
+        <div class="cassette-notch"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div>
+      <div class="hero-eyebrow">Now Playing — Side A</div>
+      <div class="hero-title">Will<br><span class="accent">Biloski</span></div>
+      <div class="hero-subtitle">Information Science @ Cornell University<br>data · machine learning · making things work</div>
+    </div>
+
+    <div class="tracklist-preview">
+      <div class="tracklist-label">Side A — Featured Tracks</div>
+      <div class="track-row playing" onclick="playTrack(this,'Python & pandas')">
+        <span class="track-num">01</span>
+        <span class="track-name">Python & pandas</span>
+        <span class="track-dur">★★★★★</span>
+      </div>
+      <div class="track-row" onclick="playTrack(this,'Machine Learning (feat. scikit-learn)')">
+        <span class="track-num">02</span>
+        <span class="track-name">Machine Learning (feat. scikit-learn)</span>
+        <span class="track-dur">★★★★☆</span>
+      </div>
+      <div class="track-row" onclick="playTrack(this,'R & Statistics')">
+        <span class="track-num">03</span>
+        <span class="track-name">R & Statistics</span>
+        <span class="track-dur">★★★★☆</span>
+      </div>
+      <div class="track-row" onclick="playTrack(this,'Data Viz (ggplot2 remix)')">
+        <span class="track-num">04</span>
+        <span class="track-name">Data Viz (ggplot2 remix)</span>
+        <span class="track-dur">★★★★☆</span>
+      </div>
+      <div class="track-row" onclick="playTrack(this,'SQL Interlude')">
+        <span class="track-num">05</span>
+        <span class="track-name">SQL Interlude</span>
+        <span class="track-dur">★★★★☆</span>
+      </div>
+    </div>
+
+    <div class="hero-meta">
+      <div class="meta-item">
+        <div class="meta-label">GPA</div>
+        <div class="meta-val">3.3</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Languages</div>
+        <div class="meta-val">7 tracks</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Class</div>
+        <div class="meta-val">Cornell '28</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Location</div>
+        <div class="meta-val">Ithaca, NY</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<div class="section-bar" id="skills">
+  <span class="section-track-num">A</span>
+  <div class="section-rule"></div>
+  <span class="section-track-title">Full Tracklist</span>
+  <div class="section-rule"></div>
+  <span class="section-side">Technical Skills</span>
+</div>
+
+<div class="tracklist-full">
+  <div class="tl-side">
+    <div class="tl-side-label">Side A — Languages</div>
+    <div class="tl-grid">
+      <div class="tl-track"><span class="tl-num">A1</span><span class="tl-name">Python</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:95%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">A2</span><span class="tl-name">R</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:85%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">A3</span><span class="tl-name">Java</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:80%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">A4</span><span class="tl-name">SQL</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:78%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">A5</span><span class="tl-name">JavaScript</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:70%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">A6</span><span class="tl-name">HTML / CSS</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:72%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">A7</span><span class="tl-name">Julia</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:60%"></div></div></div>
+    </div>
+  </div>
+
+  <div class="tl-side">
+    <div class="tl-side-label">Side B — Libraries & Tools</div>
+    <div class="tl-grid">
+      <div class="tl-track"><span class="tl-num">B1</span><span class="tl-name">pandas</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:92%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B2</span><span class="tl-name">NumPy</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:90%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B3</span><span class="tl-name">scikit-learn</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:85%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B4</span><span class="tl-name">matplotlib</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:80%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B5</span><span class="tl-name">seaborn</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:78%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B6</span><span class="tl-name">dplyr</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:85%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B7</span><span class="tl-name">ggplot2</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:82%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B8</span><span class="tl-name">tidyr</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:78%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B9</span><span class="tl-name">Git</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:80%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B10</span><span class="tl-name">Jupyter</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:88%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B11</span><span class="tl-name">RStudio</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:82%"></div></div></div>
+      <div class="tl-track"><span class="tl-num">B12</span><span class="tl-name">Excel</span><div class="tl-bar-wrap"><div class="tl-bar" style="width:75%"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPERIENCE -->
+<div class="section-bar" id="experience">
+  <span class="section-track-num">B</span>
+  <div class="section-rule"></div>
+  <span class="section-track-title">Liner Notes</span>
+  <div class="section-rule"></div>
+  <span class="section-side">Experience</span>
+</div>
+
+<div class="liner-notes">
+  <div class="liner-entry">
+    <div class="liner-side">
+      <div class="liner-track-num">01</div>
+      <div>
+        <div class="liner-role">Member</div>
+        <div class="liner-org">Kappa Theta Pi</div>
+        <div class="liner-date">Jan 2026 – Present</div>
+        <span class="liner-badge stem">STEM</span>
+      </div>
+    </div>
+    <div class="liner-divider"></div>
+    <div class="liner-content">
+      <ul class="liner-bullets">
+        <li>Accepted into new member class of 10 out of ~150 applicants; completed full new member education program</li>
+        <li>Competed in hackathons — data analysis, web dev, and ML team projects</li>
+        <li>Community service and fundraisers around Ithaca</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="liner-entry">
+    <div class="liner-side">
+      <div class="liner-track-num">02</div>
+      <div>
+        <div class="liner-role">Research Assistant</div>
+        <div class="liner-org">Varner Lab · Cornell</div>
+        <div class="liner-date">Jul – Sep 2023</div>
+        <span class="liner-badge stem">Research</span>
+      </div>
+    </div>
+    <div class="liner-divider"></div>
+    <div class="liner-content">
+      <ul class="liner-bullets">
+        <li>Measured and modeled cell responses to D-gluconate levels and impact on protein and mRNA production</li>
+        <li>Built regressions and cellular response predictions using Julia data science packages</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="liner-entry">
+    <div class="liner-side">
+      <div class="liner-track-num">03</div>
+      <div>
+        <div class="liner-role">Dev Team Member</div>
+        <div class="liner-org">Ithaca High School</div>
+        <div class="liner-date">Sep 2022 – Jun 2024</div>
+        <span class="liner-badge stem">STEM</span>
+      </div>
+    </div>
+    <div class="liner-divider"></div>
+    <div class="liner-content">
+      <ul class="liner-bullets">
+        <li>Led discussions teaching teammates on CS, ML, and emerging tech concepts</li>
+        <li>Competed in programming competitions at UPenn, Cornell, and schools across the northeast</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="liner-entry">
+    <div class="liner-side">
+      <div class="liner-track-num">04</div>
+      <div>
+        <div class="liner-role">Onsite Rep & Mover</div>
+        <div class="liner-org">Big Red Shipping</div>
+        <div class="liner-date">Mar 2024 – Present</div>
+        <span class="liner-badge pro">Pro</span>
+      </div>
+    </div>
+    <div class="liner-divider"></div>
+    <div class="liner-content">
+      <ul class="liner-bullets">
+        <li>Professional customer service ensuring smooth client moving experiences</li>
+        <li>Optimized loading strategies to maximize space and minimize transport time</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="liner-entry">
+    <div class="liner-side">
+      <div class="liner-track-num">05</div>
+      <div>
+        <div class="liner-role">Sailing Instructor</div>
+        <div class="liner-org">Merrill Sailing Center</div>
+        <div class="liner-date">Mar 2024 – Sep 2025</div>
+        <span class="liner-badge pro">Pro</span>
+      </div>
+    </div>
+    <div class="liner-divider"></div>
+    <div class="liner-content">
+      <ul class="liner-bullets">
+        <li>Taught Cornell's small boat and keel boat PE sailing classes — students could sail independently afterward</li>
+        <li>Planned summer camp curriculum keeping kids engaged with minimal downtime</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="liner-entry">
+    <div class="liner-side">
+      <div class="liner-track-num">06</div>
+      <div>
+        <div class="liner-role">Adaptive Ski Coach</div>
+        <div class="liner-org">Greek Peak</div>
+        <div class="liner-date">Winters 2023 – Present</div>
+        <span class="liner-badge vol">Volunteer</span>
+      </div>
+    </div>
+    <div class="liner-divider"></div>
+    <div class="liner-content">
+      <ul class="liner-bullets">
+        <li>Completed rigorous ski coach training plus SafeSport certification</li>
+        <li>Individualized adaptive instruction for children and adults with developmental disabilities, visual/hearing impairments, paraplegia, and amputations</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT -->
+<div class="section-bar" id="projects">
+  <span class="section-track-num">C</span>
+  <div class="section-rule"></div>
+  <span class="section-track-title">The B-Side</span>
+  <div class="section-rule"></div>
+  <span class="section-side">Featured Project</span>
+</div>
+
+<div class="bside">
+  <div class="bside-main">
+    <div class="bside-eyebrow">B-Side · Deep Cut · Data Science 2024</div>
+    <div class="bside-title">Flight Fare<br><span>Modeling</span></div>
+    <p class="bside-desc">Scraped millions of rows of flight data using Python packages, then applied regression models and scikit-learn to highlight changes in flight fares seasonally and over time — identifying the key factors that drive price fluctuations.</p>
+    <div class="bside-tags">
+      <span class="btag">Python</span>
+      <span class="btag">scikit-learn</span>
+      <span class="btag">pandas</span>
+      <span class="btag">Web Scraping</span>
+      <span class="btag">Regression Analysis</span>
+      <span class="btag">matplotlib</span>
+    </div>
+  </div>
+  <div style="width:1px;background:rgba(200,168,75,0.15)"></div>
+  <div class="bside-aside">
+    <div class="aside-label">Key Riffs</div>
+    <div class="riff"><div class="riff-n">01</div><div class="riff-t">Seasonal patterns mapped across millions of records with strong regression fit</div></div>
+    <div class="riff"><div class="riff-n">02</div><div class="riff-t">Route and timing isolated as the main fare-driving variables</div></div>
+    <div class="riff"><div class="riff-n">03</div><div class="riff-t">Predictive model built to forecast price ranges by route and window</div></div>
+    <div style="margin-top:auto;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.04)">
+      <p style="font-family:var(--mono);font-size:0.68rem;font-style:italic;color:var(--muted)">More tracks in progress via KTP hackathons.</p>
+    </div>
+  </div>
+</div>
+
+<!-- EDUCATION -->
+<div class="section-bar" id="education">
+  <span class="section-track-num">D</span>
+  <div class="section-rule"></div>
+  <span class="section-track-title">Credits</span>
+  <div class="section-rule"></div>
+  <span class="section-side">Education</span>
+</div>
+
+<div class="edu-section">
+  <div class="edu-left">
+    <div class="edu-big-num">3.3</div>
+    <div class="edu-content">
+      <div class="edu-gpa">3.3</div>
+      <div class="edu-gpa-sub">GPA · College of Arts & Sciences</div>
+      <div class="edu-degree">B.A. Information Science<br>Minor in Business</div>
+      <div class="edu-school">Cornell University</div>
+      <div class="edu-grad">Anticipated · May 2028</div>
+    </div>
+  </div>
+  <div style="width:1px;background:rgba(200,168,75,0.15)"></div>
+  <div class="edu-right">
+    <div class="course-head">Recorded At (Coursework)</div>
+    <div class="course-row">Linear Algebra</div>
+    <div class="course-row">Intro Stats for Data Science</div>
+    <div class="course-row">Learning Analytics</div>
+    <div class="course-row">Web Design</div>
+    <div class="course-row">Intro to Data Science</div>
+    <div class="course-row">Object-Oriented Programming & Data Structures</div>
+    <div class="course-row">Data Science Consulting</div>
+    <div class="course-row">Intro to Computing</div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div class="section-bar" id="contact">
+  <span class="section-track-num">E</span>
+  <div class="section-rule"></div>
+  <span class="section-track-title">Get in Touch</span>
+  <div class="section-rule"></div>
+</div>
+
+<div class="contact-section">
+  <div class="contact-left">
+    <div class="contact-big">Let's<br><span>collab.</span></div>
+    <p class="contact-sub">Open to internships, research, and anything interesting. Drop a line.</p>
+    <a href="mailto:wb292@cornell.edu" class="contact-row">
+      <div><div class="contact-row-label">Email</div><div class="contact-row-val">wb292@cornell.edu</div></div>
+    </a>
+    <a href="tel:6072204422" class="contact-row">
+      <div><div class="contact-row-label">Phone</div><div class="contact-row-val">(607) 220-4422</div></div>
+    </a>
+    <a href="https://linkedin.com/in/Will-Biloski" target="_blank" class="contact-row">
+      <div><div class="contact-row-label">LinkedIn</div><div class="contact-row-val">linkedin.com/in/Will-Biloski</div></div>
+    </a>
+    <div class="contact-row">
+      <div><div class="contact-row-label">Location</div><div class="contact-row-val">Ithaca, New York</div></div>
+    </div>
+  </div>
+  <div style="width:1px;background:rgba(200,168,75,0.15)"></div>
+  <div class="contact-right">
+    <div class="sleeve-note">
+      <p>"From regression models to mountain slopes — same focus, different terrain."</p>
+      <small>— Will Biloski · Cornell University · Class of 2028</small>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-title">WB // A Mixtape for Recruiters — Vol. 1</div>
+  <div class="footer-sub">recorded in ithaca, new york · spring 2026</div>
+</footer>
+
+<!-- NOW PLAYING BAR -->
+<div class="now-playing">
+  <div class="np-cassette"></div>
+  <div class="np-info">
+    <div class="np-track" id="np-track">Python & pandas</div>
+    <div class="np-artist">Will Biloski — A Mixtape Vol.1</div>
+  </div>
+  <div class="np-progress">
+    <span class="np-time" id="np-elapsed">0:00</span>
+    <div class="np-bar" id="np-bar">
+      <div class="np-bar-fill" id="np-fill"></div>
+    </div>
+    <span class="np-time" id="np-total">3:42</span>
+  </div>
+  <div class="np-controls">
+    <button class="np-btn" onclick="prevTrack()">|◀</button>
+    <button class="np-btn active" id="play-btn" onclick="togglePlay()">▐▐</button>
+    <button class="np-btn" onclick="nextTrack()">▶|</button>
+  </div>
+</div>
+
+<script>
+const tracks = [
+  {name:'Python & pandas', dur:222},
+  {name:'Machine Learning (feat. scikit-learn)', dur:198},
+  {name:'R & Statistics', dur:215},
+  {name:'Data Viz (ggplot2 remix)', dur:187},
+  {name:'SQL Interlude', dur:143},
+];
+
+let current = 0, elapsed = 0, playing = true, timer = null;
+
+function fmt(s){ return Math.floor(s/60)+':'+(s%60<10?'0':'')+s%60; }
+
+function updateBar(){
+  const t = tracks[current];
+  const pct = (elapsed/t.dur)*100;
+  document.getElementById('np-fill').style.width = pct+'%';
+  document.getElementById('np-bar').style.setProperty('--pos', pct+'%');
+  document.getElementById('np-elapsed').textContent = fmt(elapsed);
+  document.getElementById('np-total').textContent = fmt(t.dur);
+  document.getElementById('np-track').textContent = t.name;
+}
+
+function tick(){
+  if(!playing) return;
+  elapsed++;
+  if(elapsed > tracks[current].dur){ elapsed=0; current=(current+1)%tracks.length; }
+  updateBar();
+}
+
+function startTimer(){ timer=setInterval(tick,1000); }
+function stopTimer(){ clearInterval(timer); }
+
+function togglePlay(){
+  playing=!playing;
+  document.getElementById('play-btn').textContent = playing?'▐▐':'▶';
+  playing ? startTimer() : stopTimer();
+}
+
+function playTrack(el, name){
+  document.querySelectorAll('.track-row').forEach(r=>r.classList.remove('playing'));
+  el.classList.add('playing');
+  const idx = tracks.findIndex(t=>t.name===name);
+  if(idx>=0){ current=idx; elapsed=0; updateBar(); }
+}
+
+function nextTrack(){
+  current=(current+1)%tracks.length; elapsed=0;
+  document.querySelectorAll('.track-row').forEach((r,i)=>r.classList.toggle('playing',i===current));
+  updateBar();
+}
+function prevTrack(){
+  current=(current-1+tracks.length)%tracks.length; elapsed=0;
+  document.querySelectorAll('.track-row').forEach((r,i)=>r.classList.toggle('playing',i===current));
+  updateBar();
+}
+
+startTimer();
+updateBar();
+</script>
+</body>
+</html>
